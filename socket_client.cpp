@@ -14,7 +14,7 @@ class ClientSocket
     // @port: port number
     bool _connect(int server_port)
     {
-        std::cout<<"_connect"<<std::endl;
+        //std::cout<<"_connect"<<std::endl;
 
         client_sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -62,9 +62,9 @@ class ClientSocket
 
     int _write_len(int send_sock, int messagee_len)
     {
-        int send_len = 0;
+        //std::cout<<"_write_len"<<std::endl;
 
-        std::cout<<"_write_len"<<std::endl;
+        int send_len = 0;  
 
         send_len = send(send_sock, &messagee_len, sizeof(int), 0);
 
@@ -152,9 +152,13 @@ public:
     // @s: constant pointer to a constant char for message
     bool start()
     {
+        std::string message = "test";
+        
         int send_len = 0;
-        send_len = _write_len(client_sock, 100);
+        send_len = _write_len(client_sock, message.size());
+        printf("send: %d\n", send_len);
 
+        send_len = _write(client_sock, message, message.size());
         printf("send: %d\n", send_len);
 
         return true;
