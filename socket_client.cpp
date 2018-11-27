@@ -48,14 +48,23 @@ class ClientSocket
     {
         int send_len = 0;
 
-        /*const char *buffer = message.c_str();
+        //const char *buffer = message.c_str();
 
-        while(send_len < message_len)
-        {
-            send_len += send(send_sock, &buffer[send_len], message_len, 0);
-        }*/
+        //while(send_len < message_len)
+        //{
+        //    send_len += send(send_sock, &buffer[send_len], message_len, 0);
+        //}
 
         send_len = send(send_sock, message.c_str(), message_len, 0);
+
+        return send_len;
+    }
+
+    int _write_frame(int &send_sock, std::vector<uchar> frame, int frame_len)
+    {
+        int send_len = 0;
+
+        send_len = send(send_sock, frame.data(), frame_len, 0);
 
         return send_len;
     }
@@ -150,7 +159,7 @@ public:
     }
 
     // @s: constant pointer to a constant char for message
-    bool start()
+    /*bool start()
     {
         std::string message = "test";
         
@@ -158,19 +167,54 @@ public:
         send_len = _write_len(client_sock, message.size());
         printf("send: %d\n", send_len);
 
-        send_len = _write(client_sock, message, message.size());
+        send_len = _write(client_sock, message.c_str(), message.size());
         printf("send: %d\n", send_len);
+
+        return true;
+    }*/
+
+    bool start(std::vector<uchar> frame)
+    {
+        printf("frame size: %d\n", frame.size());
+        int send_len = 0;
+        send_len = _write_len(client_sock, frame.size());
+        printf("send: %d\n", send_len);
+
+        if(send_len < 0) // server is cracked and send_len = -1
+        {
+            return false;
+        }
+
+        send_len = _write_frame(client_sock, frame, frame.size());
+        printf("send: %d\n", send_len);
+
+        if(send_len < 0) // server is cracked and send_len = -1
+        {
+            return false;
+        }
 
         return true;
     }
 };
 
 
-int send_message(std::string ip, int port, int quality)
+/*int send_message(std::string ip, int port, int quality)
 {
     static ClientSocket client_socket(ip, port, quality);
 
     client_socket.start();
+
+    return 0;
+}*/
+
+int send_frame(std::string ip, int port, int quality, std::vector<uchar> frame)
+{
+    static ClientSocket client_socket(ip, port, quality);
+
+    if(!client_socket.start(frame)) // check whether server is cracked
+    {
+        exit(EXIT_FAILURE);
+    }
 
     return 0;
 }

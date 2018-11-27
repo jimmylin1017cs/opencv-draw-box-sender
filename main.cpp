@@ -6,14 +6,66 @@
 
 using namespace std;
 
-static void * cap;
+//static void * cap;
+static VideoCapture *cap;
 static image im;
 static image **alphabet;
 
 int main()
 {
 
-    send_message("140.113.86.135", 8090, 95);
+    char *filename = "time_counter.flv";
+
+    cap = new VideoCapture(filename);
+
+    while(1)
+    {
+        Mat m, frame;
+        *cap >> m;
+
+        resize(m, frame, Size(800, 600), 0, 0);
+
+        std::vector<uchar> outbuf;
+        std::vector<int> compression_params;
+        compression_params.push_back(cv::IMWRITE_JPEG_QUALITY); // default quality value is 95
+        compression_params.push_back(30);
+
+        cv::imencode(".jpg", frame, outbuf, compression_params); // encodes an image into a memory buffer
+
+        
+        //im = mat_to_image(m2);
+
+        imshow("Sender", frame);
+        waitKey(1);
+
+        std::cout<<outbuf.size()<<std::endl;
+
+        send_frame("140.113.86.135", 8090, 95, outbuf);
+
+        //im = resize_image(im, 800, 600);
+        //show_image_cv(im, "Demo", 1);
+    }
+    
+    //send_message("140.113.86.135", 8090, 95);
+
+    /*char *filename = "predictions.jpg";
+
+    cap = new VideoCapture(filename);
+
+    Mat m;
+    *cap >> m;
+
+    std::vector<uchar> frame;
+    std::vector<int> compression_params;
+    compression_params.push_back(cv::IMWRITE_JPEG_QUALITY); // default quality value is 95
+    compression_params.push_back(30);
+
+    cv::imencode(".jpg", m, frame, compression_params); // encodes an image into a memory buffer
+
+
+    cout<<frame.size()<<endl;
+    
+    send_frame("140.113.86.135", 8090, 95, frame);*/
 
 
 
