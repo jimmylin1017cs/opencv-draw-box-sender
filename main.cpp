@@ -1,29 +1,49 @@
 #include "image.h"
 #include "mjpeg_streaming.h"
-#include "socket_client.h"
+#include "DAI_push.h"
 #include <iostream>
 #include <vector>
+#include <ctime>
 
-using namespace std;
-
-//static void * cap;
-static VideoCapture *cap;
+static cv::VideoCapture *cap;
 static image im;
+static cv::Mat m, frame;
 static image **alphabet;
 
 int main()
 {
+    alphabet = load_alphabet();
+    int red = 0, green = 0, blue = 255; // box color
+    float rgb[3] = {red, green, blue};
+
+    int width = 3; // box line width
+    int alphabet_size = 3;
+
+    int left = 50; // x1
+    int top = 50; // y1
+    int right = 200; // x2
+    int bot = 300; // y2
+
+    srand(time(NULL));
+    iot_init();
 
     char *filename = "time_counter.flv";
 
-    cap = new VideoCapture(filename);
+    cap = new cv::VideoCapture(filename);
 
     while(1)
     {
-        Mat m, frame;
         *cap >> m;
 
-        resize(m, frame, Size(800, 600), 0, 0);
+        cv::resize(m, frame, cv::Size(800, 600), 0, 0);
+
+        person_box b1 = {"person_name", 1, (rand()%100)+100, (rand()%100)+100, (rand()%300)+200, (rand()%300)+200};
+        //person_box b2 = {"test_name", 2, 500, 100, 600, 500};
+        std::vector<person_box> boxes;
+        boxes.push_back(b1);
+        //boxes.push_back(b2);
+
+        //std::cout<<b.name<<std::endl;
 
         std::vector<uchar> outbuf;
         std::vector<int> compression_params;
@@ -32,15 +52,39 @@ int main()
 
         cv::imencode(".jpg", frame, outbuf, compression_params); // encodes an image into a memory buffer
 
+        iot_send(outbuf, boxes);
+
+        im = mat_to_image(frame);
+
+        width = im.h * .012;
+        alphabet_size = im.h*.03;
+
+        image label;
+
+        for(int i = 0; i < boxes.size(); i++)
+        {
+            left = boxes[i].x1;
+            top = boxes[i].y1;
+            right = boxes[i].x2;
+            bot = boxes[i].y2;
+            draw_box_width(im, left, top, right, bot, width, red, green, blue);
+            image label = get_label(alphabet, (char *)boxes[i].name.c_str(), alphabet_size);
+            draw_label(im, top + width + alphabet_size, left, label, rgb);
+        }
+
+        //draw_box_width(im, left, top, right, bot, width, red, green, blue);
         
-        //im = mat_to_image(m2);
+        //image label = get_label(alphabet, (char *)name.c_str(), alphabet_size);
+        //draw_label(im, top + width + alphabet_size, left, label, rgb);
 
-        imshow("Sender", frame);
-        waitKey(1);
+        frame = image_to_mat(im);
 
-        std::cout<<outbuf.size()<<std::endl;
+        cv::imshow("Sender", frame);
+        cv::waitKey(1);
 
-        send_frame("140.113.86.135", 8090, 95, outbuf);
+        //std::cout<<"jpg: "<<outbuf.size()<<std::endl;
+
+        //send_frame("140.113.86.135", 8090, 95, outbuf);
 
         //im = resize_image(im, 800, 600);
         //show_image_cv(im, "Demo", 1);
